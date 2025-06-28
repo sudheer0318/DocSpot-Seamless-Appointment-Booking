@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocSpot: Seamless Appointment Booking</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better aesthetics */
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+        body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        body::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        body::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Inter font from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Using the uploaded image for the entire body background */
+            background-image: url('istockphoto-1189304032-612x612.jpg'); /* New: User-provided image */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        /* Make content sections slightly transparent to allow background image to show */
+        .page-section {
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background for readability */
+        }
+        /* New hover effects for cards */
+        .hover-card-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .hover-scale-102:hover {
+            transform: scale(1.02);
+        }
+
+        /* Using the uploaded image for the main content area background as well */
+        main {
+            background-image: url('istockphoto-1189304032-612x612.jpg'); /* New: User-provided image */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 1rem; /* Rounded corners for the main section */
+            overflow: hidden; /* Ensures content within follows border-radius */
+            position: relative; /* Needed for z-index context */
+            z-index: 1; /* Ensures it sits above body background but below content */
+            padding: 2rem; /* Add some padding to see the background */
+            margin-top: 1rem; /* Space from header */
+            margin-bottom: 1rem; /* Space from footer */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <span>Processing...</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" id="home-logo" class="text-3xl font-bold text-blue-700 hover:text-indigo-600 transition duration-300">DocSpot</a>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><button id="nav-home" class="text-gray-700 hover:text-blue-700 font-medium transition duration-300">Home</button></li>
+                    <li><button id="nav-login" class="text-gray-700 hover:text-blue-700 font-medium transition duration-300">Login</button></li>
+                    <li><button id="nav-register" class="text-gray-700 hover:text-blue-700 font-medium transition duration-300">Register</button></li>
+                    <li><button id="nav-dashboard" class="hidden text-gray-700 hover:text-blue-700 font-medium transition duration-300">Dashboard</button></li>
+                    <li><button id="nav-appointments" class="hidden text-gray-700 hover:text-blue-700 font-medium transition duration-300">My Appointments</button></li>
+                    <li><button id="nav-logout" class="hidden bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 shadow-md">Logout</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto p-6 md:p-8">
+
+        <!-- Message Box for Alerts (replaces alert()) -->
+        <div id="message-box" class="fixed top-20 right-6 z-50 hidden">
+            <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-xl flex items-center space-x-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span id="message-text" class="font-medium"></span>
+                <button id="message-close" class="text-white hover:text-blue-200 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. Home Page -->
+        <section id="home-page" class="page-section transition-opacity duration-500 flex flex-col items-center text-center py-16 md:py-24 bg-white rounded-xl shadow-lg">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-blue-800 mb-6 leading-tight hover:text-indigo-600 transition duration-300">
+                DocSpot: <span class="text-indigo-600">Seamless Appointment Booking</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-700 max-w-3xl mb-10">
+                Booking a doctor's appointment has never been easier. Quickly and effortlessly schedule your appointments from the comfort of your own home.
+            </p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
+                <button id="home-browse-doctors" class="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:bg-blue-700 transform hover:scale-105 transition duration-300 ease-in-out">
+                    Browse Doctors
+                </button>
+                <button id="home-register-btn" class="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:bg-blue-50 transform hover:scale-105 transition duration-300 ease-in-out">
+                    Register Now
+                </button>
+            </div>
+
+            <div class="mt-20 grid md:grid-cols-3 gap-10 max-w-5xl">
+                <div class="bg-blue-50 p-8 rounded-xl shadow-md text-left hover-card-lift transition duration-300">
+                    <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3 hover:text-blue-700 transition duration-300">Real-time Availability</h3>
+                    <p class="text-gray-600">Choose from a range of open slots that fit your schedule, from early morning to evening appointments.</p>
+                </div>
+                <div class="bg-blue-50 p-8 rounded-xl shadow-md text-left hover-card-lift transition duration-300">
+                    <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3 hover:text-blue-700 transition duration-300">Browse Wide Range</h3>
+                    <p class="text-gray-600">Browse through a wide range of doctors and healthcare providers to find the perfect match for your needs.</p>
+                </div>
+                <div class="bg-blue-50 p-8 rounded-xl shadow-md text-left hover-card-lift transition duration-300">
+                    <svg class="w-12 h-12 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3 hover:text-blue-700 transition duration-300">Easy Management</h3>
+                    <p class="text-gray-600">View and manage your upcoming appointments, with options to cancel or reschedule if needed.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Login Page -->
+        <section id="login-page" class="page-section transition-opacity duration-500 hidden flex items-center justify-center min-h-[60vh]">
+            <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+                <h2 class="text-3xl font-bold text-center text-blue-700 mb-8 hover:text-indigo-600 transition duration-300">Login to DocSpot</h2>
+                <!-- Removed the note and dummy credentials -->
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="login-email" class="block text-gray-700 font-medium mb-2">Email Address</label>
+                        <input type="email" id="login-email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" placeholder="your@example.com" required>
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="login-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" placeholder="********" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                        Login
+                    </button>
+                </form>
+                <p class="text-center text-gray-600 mt-6">
+                    Don't have an account? <button class="text-blue-600 hover:underline font-semibold" id="go-to-register">Register here</button>
+                </p>
+            </div>
+        </section>
+
+        <!-- 3. Register Page -->
+        <section id="register-page" class="page-section transition-opacity duration-500 hidden flex items-center justify-center min-h-[60vh]">
+            <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+                <h2 class="text-3xl font-bold text-center text-blue-700 mb-8 hover:text-indigo-600 transition duration-300">Register for DocSpot</h2>
+                <!-- Removed the note about simulated registration -->
+                <form id="register-form" class="space-y-6">
+                    <div>
+                        <label for="register-email" class="block text-gray-700 font-medium mb-2">Email Address</label>
+                        <input type="email" id="register-email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" placeholder="your@example.com" required>
+                    </div>
+                    <div>
+                        <label for="register-password" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="register-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" placeholder="********" required>
+                    </div>
+                    <div>
+                        <label for="register-confirm-password" class="block text-gray-700 font-medium mb-2">Confirm Password</label>
+                        <input type="password" id="register-confirm-password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" placeholder="********" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                        Register
+                    </button>
+                </form>
+                <p class="text-center text-gray-600 mt-6">
+                    Already have an account? <button class="text-blue-600 hover:underline font-semibold" id="go-to-login">Login here</button>
+                </p>
+            </div>
+        </section>
+
+        <!-- 4. Dashboard (Doctors List) -->
+        <section id="dashboard-page" class="page-section transition-opacity duration-500 hidden py-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center hover:text-indigo-600 transition duration-300">Find Your Doctor</h2>
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+                <input type="text" id="doctor-search" placeholder="Search by name or specialty..." class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select id="doctor-specialty-filter" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Specialties</option>
+                    <option value="Cardiologist">Cardiologist</option>
+                    <option value="Dermatologist">Dermatologist</option>
+                    <option value="Pediatrician">Pediatrician</option>
+                    <option value="General Practitioner">General Practitioner</option>
+                    <option value="Orthopedic Surgeon">Orthopedic Surgeon</option>
+                    <option value="Neurologist">Neurologist</option>
+                </select>
+            </div>
+
+            <div id="doctors-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Doctor cards will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- 5. Booking Page -->
+        <section id="booking-page" class="page-section transition-opacity duration-500 hidden flex items-center justify-center min-h-[60vh]">
+            <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-xl">
+                <h2 class="text-3xl font-bold text-center text-blue-700 mb-8 hover:text-indigo-600 transition duration-300">Book Appointment with <span id="booking-doctor-name"></span></h2>
+                <form id="booking-form" class="space-y-6">
+                    <div>
+                        <label for="appointment-date" class="block text-gray-700 font-medium mb-2">Desired Date</label>
+                        <input type="date" id="appointment-date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" required>
+                    </div>
+                    <div>
+                        <label for="appointment-time" class="block text-gray-700 font-medium mb-2">Desired Time</label>
+                        <input type="time" id="appointment-time" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" required>
+                    </div>
+                    <div>
+                        <label for="medical-documents" class="block text-gray-700 font-medium mb-2">Upload Medical Documents (Optional)</label>
+                        <input type="file" id="medical-documents" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="text-sm text-gray-500 mt-1">Accepted formats: PDF, JPG, PNG.</p>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                        Confirm Booking
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 6. My Appointments Page -->
+        <section id="my-appointments-page" class="page-section transition-opacity duration-500 hidden py-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center hover:text-indigo-600 transition duration-300">My Appointments</h2>
+            <div id="appointments-list" class="space-y-4">
+                <!-- Appointments will be injected here by JavaScript -->
+                <p id="no-appointments-message" class="text-center text-gray-600 text-lg hidden">You have no upcoming appointments.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white p-6 text-center mt-auto">
+        <div class="container mx-auto">
+            <p>&copy; 2025 DocSpot. All rights reserved.</p>
+            <p class="text-sm mt-2">Connecting you to better health, seamlessly.</p>
+        </div>
+    </footer>
+
+    <script>
+        const pages = document.querySelectorAll('.page-section');
+        const navHome = document.getElementById('nav-home');
+        const homeLogo = document.getElementById('home-logo');
+        const navLogin = document.getElementById('nav-login');
+        const navRegister = document.getElementById('nav-register');
+        const navDashboard = document.getElementById('nav-dashboard');
+        const navAppointments = document.getElementById('nav-appointments');
+        const navLogout = document.getElementById('nav-logout');
+        const homeBrowseDoctorsBtn = document.getElementById('home-browse-doctors');
+        const homeRegisterBtn = document.getElementById('home-register-btn');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const goToRegisterBtn = document.getElementById('go-to-register');
+        const goToLoginBtn = document.getElementById('go-to-login');
+        const doctorsListContainer = document.getElementById('doctors-list');
+        const bookingDoctorName = document.getElementById('booking-doctor-name');
+        const bookingForm = document.getElementById('booking-form');
+        const appointmentsListContainer = document.getElementById('appointments-list');
+        const noAppointmentsMessage = document.getElementById('no-appointments-message');
+        const doctorSearchInput = document.getElementById('doctor-search');
+        const doctorSpecialtyFilter = document.getElementById('doctor-specialty-filter');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const messageCloseBtn = document.getElementById('message-close');
+
+        let currentUser = null; // Simulated user login state
+        let registeredUsers = {}; // A simple object to store simulated registered users
+
+        let bookedAppointments = []; // Simulated booked appointments
+
+        // Helper to show/hide loading overlay
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // Function to show messages
+        function showMessage(text, type = 'info') {
+            messageText.textContent = text;
+            messageBox.className = `fixed top-20 right-6 z-50 transition-all duration-300 ease-in-out transform translate-x-0 ${type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white px-6 py-3 rounded-lg shadow-xl flex items-center space-x-3`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+                messageBox.classList.remove('translate-x-0');
+                messageBox.classList.add('translate-x-full');
+            }, 5000);
+        }
+
+        messageCloseBtn.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+        });
+
+        // Function to navigate between pages
+        function showPage(pageId) {
+            pages.forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('opacity-100');
+                page.classList.add('opacity-0');
+            });
+            const activePage = document.getElementById(pageId);
+            if (activePage) {
+                activePage.classList.remove('hidden');
+                setTimeout(() => {
+                    activePage.classList.remove('opacity-0');
+                    activePage.classList.add('opacity-100');
+                }, 50); // Small delay for fade effect
+            }
+        }
+
+        // Update navigation visibility based on login status
+        function updateNav() {
+            if (currentUser) {
+                navLogin.classList.add('hidden');
+                navRegister.classList.add('hidden');
+                navDashboard.classList.remove('hidden');
+                navAppointments.classList.remove('hidden');
+                navLogout.classList.remove('hidden');
+            } else {
+                navLogin.classList.remove('hidden');
+                navRegister.classList.remove('hidden');
+                navDashboard.classList.add('hidden');
+                navAppointments.classList.add('hidden');
+                navLogout.classList.add('hidden');
+            }
+        }
+
+        // Dummy Doctor Data
+        const doctors = [
+            { id: 1, name: "Dr. Alice Johnson", specialty: "Cardiologist", location: "New York", imageUrl: "https://placehold.co/100x100/ADD8E6/000000?text=AJ" },
+            { id: 2, name: "Dr. Bob Williams", specialty: "Pediatrician", location: "Los Angeles", imageUrl: "https://placehold.co/100x100/FFDAB9/000000?text=BW" },
+            { id: 3, name: "Dr. Carol Davis", specialty: "Dermatologist", location: "Chicago", imageUrl: "https://placehold.co/100x100/DAF7A6/000000?text=CD" },
+            { id: 4, name: "Dr. David Brown", specialty: "General Practitioner", location: "Houston", imageUrl: "https://placehold.co/100x100/B0E0E6/000000?text=DB" },
+            { id: 5, name: "Dr. Eve Miller", specialty: "Orthopedic Surgeon", location: "Phoenix", imageUrl: "https://placehold.co/100x100/F0E68C/000000?text=EM" },
+            { id: 6, name: "Dr. Frank White", specialty: "Neurologist", location: "Philadelphia", imageUrl: "https://placehold.co/100x100/E6E6FA/000000?text=FW" },
+            { id: 7, name: "Dr. Grace Lee", specialty: "Cardiologist", location: "San Antonio", imageUrl: "https://placehold.co/100x100/DDA0DD/000000?text=GL" },
+            { id: 8, name: "Dr. Henry Wilson", specialty: "Pediatrician", location: "San Diego", imageUrl: "https://placehold.co/100x100/FFB6C1/000000?text=HW" },
+        ];
+
+        // Simulated Backend API URL - NOT USED FOR REAL AUTHENTICATION IN THIS DEMO
+        const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
+
+        // --- Simulated Backend Interactions ---
+
+        // Function to simulate fetching doctors from a backend
+        async function fetchDoctorsFromBackend() {
+            showLoading();
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                return doctors; // For this simulation, return the local dummy data
+            } catch (error) {
+                console.error('Error fetching doctors:', error);
+                showMessage('Failed to load doctors. Please try again.', 'error');
+                return [];
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Function to simulate user login with dynamic registration details
+        async function authenticateUser(email, password) {
+            showLoading();
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                if (registeredUsers[email] && registeredUsers[email].password === password) {
+                    return { success: true, user: { email: email, name: registeredUsers[email].name || email.split('@')[0] } };
+                } else {
+                    return { success: false, message: 'Invalid email or password.' };
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                return { success: false, message: 'Network error or server unavailable.' };
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Function to simulate user registration and store details
+        async function registerUser(email, password) {
+            showLoading();
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1200));
+
+                if (registeredUsers[email]) {
+                    return { success: false, message: 'User with this email already exists.' };
+                }
+
+                registeredUsers[email] = { password: password, name: email.split('@')[0] }; // Store with basic name
+                return { success: true, user: { email: email, name: registeredUsers[email].name } };
+            } catch (error) {
+                console.error('Registration error:', error);
+                return { success: false, message: 'Network error or server unavailable.' };
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Function to simulate booking an appointment
+        async function bookAppointmentBackend(appointmentDetails) {
+            showLoading();
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const newAppointment = {
+                    ...appointmentDetails,
+                    id: bookedAppointments.length + 1,
+                    status: 'Confirmation Successfully!'
+                };
+                bookedAppointments.push(newAppointment);
+                return { success: true, appointment: newAppointment };
+            } catch (error) {
+                console.error('Booking error:', error);
+                return { success: false, message: 'Failed to book appointment. Please try again.' };
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // --- Frontend Rendering and Event Listeners (updated to use simulated backend functions) ---
+
+        // Render Doctors List
+        async function renderDoctors(filteredDoctors = []) {
+            const doctorsData = await fetchDoctorsFromBackend();
+            const doctorsToDisplay = filteredDoctors.length > 0 ? filteredDoctors : doctorsData;
+
+            doctorsListContainer.innerHTML = '';
+            if (doctorsToDisplay.length === 0) {
+                doctorsListContainer.innerHTML = '<p class="col-span-full text-center text-gray-600 text-lg">No doctors found matching your criteria.</p>';
+                return;
+            }
+            doctorsToDisplay.forEach(doctor => {
+                const doctorCard = `
+                    <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center hover-card-lift transition duration-300">
+                        <img src="${doctor.imageUrl || 'https://placehold.co/100x100/CCCCCC/000000?text=Doc'}" alt="${doctor.name}" class="w-24 h-24 rounded-full mb-4 border-2 border-blue-200 object-cover">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${doctor.name}</h3>
+                        <p class="text-blue-600 font-medium mb-1">${doctor.specialty || 'General Practitioner'}</p>
+                        <p class="text-gray-500 text-sm mb-4">${doctor.location || 'N/A'}</p>
+                        <button data-doctor-id="${doctor.id}" class="book-now-btn bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 transition duration-300 shadow-md hover-scale-102">
+                            Book Now
+                        </button>
+                    </div>
+                `;
+                doctorsListContainer.innerHTML += doctorCard;
+            });
+
+            document.querySelectorAll('.book-now-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    if (!currentUser) {
+                        showMessage('Please login or register to book an appointment.', 'error');
+                        showPage('login-page');
+                        return;
+                    }
+                    const doctorId = parseInt(event.target.dataset.doctorId);
+                    const selectedDoctor = doctors.find(doc => doc.id === doctorId);
+                    if (selectedDoctor) {
+                        bookingDoctorName.textContent = selectedDoctor.name;
+                        bookingForm.dataset.doctorId = selectedDoctor.id;
+                        showPage('booking-page');
+                    }
+                });
+            });
+        }
+
+        // Render Appointments List
+        function renderAppointments() {
+            appointmentsListContainer.innerHTML = '';
+            if (bookedAppointments.length === 0) {
+                noAppointmentsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noAppointmentsMessage.classList.add('hidden');
+            }
+
+            bookedAppointments.forEach((appointment, index) => {
+                const appointmentCard = `
+                    <div class="bg-white p-6 rounded-xl shadow-md flex flex-col md:flex-row justify-between items-center hover-card-lift transition duration-300">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-1">Appointment with ${appointment.doctorName}</h3>
+                            <p class="text-blue-600 font-medium mb-1">${appointment.specialty} at ${appointment.location}</p>
+                            <p class="text-gray-600 text-sm">Date: ${appointment.date} at ${appointment.time}</p>
+                            <p class="text-gray-500 text-xs mt-1">Status: <span class="font-bold ${appointment.status.includes('Confirmed') ? 'text-green-700' : 'text-yellow-700'}">${appointment.status}</span></p>
+                        </div>
+                        <div class="flex space-x-3 mt-4 md:mt-0">
+                            <button data-index="${index}" class="reschedule-btn bg-yellow-500 text-white px-4 py-2 rounded-full text-sm hover:bg-yellow-600 transition duration-300 shadow-md hover-scale-102">
+                                Reschedule
+                            </button>
+                            <button data-index="${index}" class="cancel-btn bg-red-500 text-white px-4 py-2 rounded-full text-sm hover:bg-red-600 transition duration-300 shadow-md hover-scale-102">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+                appointmentsListContainer.innerHTML += appointmentCard;
+            });
+
+            document.querySelectorAll('.reschedule-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    showMessage('Simulating reschedule request...');
+                    setTimeout(() => {
+                        bookedAppointments[index].status = 'Rescheduled - Pending Doctor Approval';
+                        renderAppointments();
+                        showMessage('Appointment reschedule request sent. Awaiting doctor confirmation.', 'info');
+                    }, 800);
+                });
+            });
+
+            document.querySelectorAll('.cancel-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = parseInt(event.target.dataset.index);
+                    showMessage('Simulating cancellation request...');
+                    setTimeout(() => {
+                        bookedAppointments.splice(index, 1);
+                        renderAppointments();
+                        showMessage('Appointment cancelled successfully.', 'info');
+                    }, 800);
+                });
+            });
+        }
+
+        // Event Listeners for Navigation
+        navHome.addEventListener('click', () => {
+            showPage('home-page');
+        });
+        homeLogo.addEventListener('click', () => {
+            showPage('home-page');
+        });
+        navLogin.addEventListener('click', () => {
+            showPage('login-page');
+        });
+        navRegister.addEventListener('click', () => {
+            showPage('register-page');
+        });
+        navDashboard.addEventListener('click', async () => {
+            if (currentUser) {
+                await renderDoctors();
+                doctorSearchInput.value = '';
+                doctorSpecialtyFilter.value = '';
+                showPage('dashboard-page');
+            } else {
+                showMessage('Please login to view the dashboard.', 'error');
+                showPage('login-page');
+            }
+        });
+        navAppointments.addEventListener('click', () => {
+            if (currentUser) {
+                renderAppointments();
+                showPage('my-appointments-page');
+            } else {
+                showMessage('Please login to view your appointments.', 'error');
+                showPage('login-page');
+            }
+        });
+        navLogout.addEventListener('click', () => {
+            currentUser = null;
+            bookedAppointments = [];
+            updateNav();
+            showMessage('logged out Successfully.');
+            showPage('home-page');
+        });
+
+        homeBrowseDoctorsBtn.addEventListener('click', async () => {
+             if (currentUser) {
+                await renderDoctors();
+                showPage('dashboard-page');
+            } else {
+                showMessage('Please login or register to browse doctors.', 'error');
+                showPage('login-page');
+            }
+        });
+
+        homeRegisterBtn.addEventListener('click', () => {
+            showPage('register-page');
+        });
+
+        goToRegisterBtn.addEventListener('click', () => {
+            showPage('register-page');
+        });
+
+        goToLoginBtn.addEventListener('click', () => {
+            showPage('login-page');
+        });
+
+        // Form Submissions (Updated to use simulated backend calls)
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const result = await authenticateUser(email, password);
+
+            if (result.success) {
+                currentUser = result.user;
+                updateNav();
+                showMessage(`Welcome back, ${currentUser.name}!`);
+                await renderDoctors();
+                showPage('dashboard-page');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        });
+
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            const result = await registerUser(email, password);
+
+            if (result.success) {
+                currentUser = result.user;
+                updateNav();
+                showMessage('Registration successful! You are now logged in.', 'info');
+                await renderDoctors();
+                showPage('dashboard-page');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        });
+
+        bookingForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const doctorId = parseInt(bookingForm.dataset.doctorId);
+            const selectedDoctor = doctors.find(doc => doc.id === doctorId);
+            const date = document.getElementById('appointment-date').value;
+            const time = document.getElementById('appointment-time').value;
+            const documentsFile = document.getElementById('medical-documents').files[0];
+            const documents = documentsFile ? documentsFile.name : 'N/A';
+
+            if (!selectedDoctor || !date || !time) {
+                showMessage('Please fill in all required booking details.', 'error');
+                return;
+            }
+
+            const appointmentDetails = {
+                doctorId: selectedDoctor.id,
+                doctorName: selectedDoctor.name,
+                specialty: selectedDoctor.specialty,
+                location: selectedDoctor.location,
+                date: date,
+                time: time,
+                documents: documents
+            };
+
+            const result = await bookAppointmentBackend(appointmentDetails);
+
+            if (result.success) {
+                showMessage(`Appointment with ${selectedDoctor.name} on ${date} at ${time} requested successfully!`, 'info');
+                bookingForm.reset();
+                renderAppointments();
+                showPage('my-appointments-page');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        });
+
+        // Doctor search and filter logic
+        async function applyDoctorFilters() {
+            const doctorsData = await fetchDoctorsFromBackend();
+            const searchText = doctorSearchInput.value.toLowerCase();
+            const specialtyFilter = doctorSpecialtyFilter.value;
+
+            const filtered = doctorsData.filter(doctor => {
+                const matchesSearch = doctor.name.toLowerCase().includes(searchText) ||
+                                      doctor.specialty.toLowerCase().includes(searchText);
+                const matchesSpecialty = specialtyFilter === '' || doctor.specialty === specialtyFilter;
+                return matchesSearch && matchesSpecialty;
+            });
+            doctorsListContainer.innerHTML = '';
+            if (filtered.length === 0) {
+                doctorsListContainer.innerHTML = '<p class="col-span-full text-center text-gray-600 text-lg">No doctors found matching your criteria.</p>';
+                return;
+            }
+            filtered.forEach(doctor => {
+                const doctorCard = `
+                    <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center hover-card-lift transition duration-300">
+                        <img src="${doctor.imageUrl || 'https://placehold.co/100x100/CCCCCC/000000?text=Doc'}" alt="${doctor.name}" class="w-24 h-24 rounded-full mb-4 border-2 border-blue-200 object-cover">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${doctor.name}</h3>
+                        <p class="text-blue-600 font-medium mb-1">${doctor.specialty || 'General Practitioner'}</p>
+                        <p class="text-gray-500 text-sm mb-4">${doctor.location || 'N/A'}</p>
+                        <button data-doctor-id="${doctor.id}" class="book-now-btn bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-blue-700 transition duration-300 shadow-md hover-scale-102">
+                            Book Now
+                        </button>
+                    </div>
+                `;
+                doctorsListContainer.innerHTML += doctorCard;
+            });
+
+            document.querySelectorAll('.book-now-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    if (!currentUser) {
+                        showMessage('Please login or register to book an appointment.', 'error');
+                        showPage('login-page');
+                        return;
+                    }
+                    const doctorId = parseInt(event.target.dataset.doctorId);
+                    const selectedDoctor = doctors.find(doc => doc.id === doctorId);
+                    if (selectedDoctor) {
+                        bookingDoctorName.textContent = selectedDoctor.name;
+                        bookingForm.dataset.doctorId = selectedDoctor.id;
+                        showPage('booking-page');
+                    }
+                });
+            });
+        }
+
+        doctorSearchInput.addEventListener('input', applyDoctorFilters);
+        doctorSpecialtyFilter.addEventListener('change', applyDoctorFilters);
+
+        // Initial page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            showPage('home-page');
+            updateNav();
+            await renderDoctors();
+            renderAppointments();
+        });
+    </script>
+</body>
+</html>
